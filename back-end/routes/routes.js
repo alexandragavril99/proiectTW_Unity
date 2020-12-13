@@ -96,3 +96,53 @@ router.route("/getActivitiesByType/type").get((req, res) => {
   }
   }).then(result => res.json(result));
 });
+
+router.route("/addFeedback").post((req, res)=> {
+  const feedback={ 
+    Text: req.body.Text,
+    Nota: req.body.Nota,
+    DataFeedback: req.body.DataFeedback,
+    IdActivitate: req.body.IdActivitate
+  }
+
+let errors =[];
+
+  if(!feedback.Text || !feedback.Nota || !feedback.IdActivitate) {
+    console.log("Missing fields!");
+    errors.push("Missing fields!");
+  }
+
+  if(feedback.Text.length <10 || feedback.Text.length > 100 ) {
+    console.log("The feedback must have between 10 and 100 characters!");
+    errors.push("The feedback must have between 10 and 100 characters!");
+  }
+
+  if (errors.length===0) {
+    try {
+      Feedback.create(feedback).then((result) => res.json(result));
+   //  res.status(201).send({ message: "Feedback adaugat!" });
+    } catch (error) {
+      console.log(error);
+      res.status(500).send({ message: "EROARE" });
+    }
+   
+    }
+    else {
+      res.status(400).send(errors);
+    }
+
+});
+
+router.route("/getFeedback").get((req, res) => {
+  Feedback.findAll().then(result => res.json(result));
+})
+
+
+router.route("/getFeedbackByActivityId/:id").get((req, res) => {
+  Feedback.findAll({
+    where: {
+      IdActivitate: req.params.id
+  }
+  }).then(result => res.json(result)).catch(err => console.log("Error!"));
+
+});
