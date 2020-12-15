@@ -146,3 +146,47 @@ router.route("/getFeedbackByActivityId/:id").get((req, res) => {
   }).then(result => res.json(result)).catch(err => console.log("Error!"));
 
 });
+
+router.route("/deleteActivity/:id").delete((req,res)=>{
+ 
+  Activities.findByPk(req.params.id).then(record =>
+      {
+          record.destroy();
+      }).then(()=> res.json(`The activity with the id ${req.params.id} was deleted!`)); 
+});
+
+router.route("/updateActivity/:id").put((req, res) => {
+
+  Activities.findByPk(req.params.id).then(record => {
+      record.update({ 
+        Nume: req.body.Nume, 
+        CodAcces: req.body.CodAcces,
+        DataInceput: req.body.DataInceput, 
+        DataSfarsit: req.body.DataSfarsit,
+        TipActivitate: req.body.TipActivitate,
+      }).then(result => res.json(result)); 
+  })
+
+});
+
+// router.route("/checkAccessCode/:id").get((req, res)=>
+// {
+//   try {
+//     Activities.findOne({
+//     where: {
+  
+//       IdActivitate: req.params.id,
+//       CodAcces: req.body.CodAcces,
+//     }
+//   }).then(result => 
+//     res.status(200).send({
+//     message: "Codul de acces este ok "
+//   }))
+// }
+// //catch(err){ res.status(500).send(err); }
+// catch {res.status(400).send ({
+//   message: "Cod incorect!"
+// })}
+// })
+
+
