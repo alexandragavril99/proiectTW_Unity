@@ -12,69 +12,48 @@ export const sequelize = new Sequelize("database1", "sa1", "sa1", {
 });
 
 export const Activities = sequelize.define("Activity", {
-  IdActivitate: {
+  IdActivity: {
     type: Sequelize.INTEGER,
     autoIncrement: true,
     primaryKey: true,
     allowNull: true,
   },
-  Nume: {
+  Name: {
     type: Sequelize.STRING,
   },
-  CodAcces: {
+  AccessCode: {
     type: Sequelize.STRING,
   },
-  DataInceput: {
+  StartDate: {
     type: Sequelize.DATE,
   },
-  DataSfarsit: {
+  FinalDate: {
     type: Sequelize.DATE,
   },
-  TipActivitate: {
+  ActivityType: {
     type: Sequelize.STRING,
   },
 });
 
-export const Professors = sequelize.define("Professor", {
-  IdProfesor: {
+export const Users = sequelize.define("User", {
+  IdUser: {
     type: Sequelize.INTEGER,
     autoIncrement: true,
     primaryKey: true,
     allowNull: true,
   },
-  Nume: {
+  Name: {
     type: Sequelize.STRING,
   },
 
   Email: {
     type: Sequelize.STRING,
   },
-  Parola: {
+  Password: {
     type: Sequelize.STRING,
   },
-});
-
-export const Students = sequelize.define("Student", {
-  IdStudent: {
-    type: Sequelize.INTEGER,
-    autoIncrement: true,
-    primaryKey: true,
-    allowNull: true,
-  },
-  Nume: {
-    type: Sequelize.STRING,
-  },
-  Facultate: {
-    type: Sequelize.STRING,
-  },
-  Email: {
-    type: Sequelize.STRING,
-  },
-  Parola: {
-    type: Sequelize.STRING,
-  },
-  CodStudent: {
-    type: Sequelize.STRING,
+  isProfessor: {
+    type: Sequelize.BOOLEAN,
   },
 });
 
@@ -88,26 +67,26 @@ export const Feedback = sequelize.define("Feedback", {
   Text: {
     type: Sequelize.STRING,
   },
-  Nota: {
+  Grade: {
     type: Sequelize.INTEGER,
   },
 
-  DataFeedback: {
+  FeedbackDate: {
     type: Sequelize.DATE,
   },
 });
 
-Professors.hasMany(Activities, {
-  foreignKey: "IdProfesor",
+Users.hasMany(Activities, {
+  foreignKey: "IdUser",
   foreignKeyConstraint: true,
 });
 
-Students.hasMany(Feedback, {
-  foreignKey: "CodStudent",
+Users.hasMany(Feedback, {
+  foreignKey: "IdUser",
   foreignKeyConstraint: true,
 });
 
 Activities.hasMany(Feedback, {
-  foreignKey: "IdActivitate",
+  foreignKey: "IdActivity",
   foreignKeyConstraint: true,
 });

@@ -1,7 +1,7 @@
 import bodyParser from "body-parser";
 import cors from "cors";
 import express from "express";
-import { Professors, sequelize } from "./sequelize/sequelize.js";
+import { sequelize, Users } from "./sequelize/sequelize.js";
 import { router } from "./routes/routes.js";
 import { initPassport } from "./passport/passport-config.js";
 import passport from "passport";
@@ -23,12 +23,12 @@ sequelize
 initPassport(
   passport,
   async (email) => {
-    return await Professors.findOne({
+    return await Users.findOne({
       where: { Email: email },
     });
   },
   async (id) => {
-    return await Professors.findOne({ where: { IdProfesor: id } });
+    return await Users.findOne({ where: { IdUser: id } });
   }
 );
 

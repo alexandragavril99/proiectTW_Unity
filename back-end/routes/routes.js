@@ -2,8 +2,7 @@ import express from "express";
 import bcrypt from "bcrypt";
 import {
   Activities,
-  Professors,
-  Students,
+  Users,
   Feedback,
   sequelize,
 } from "../sequelize/sequelize.js";
@@ -11,11 +10,12 @@ import passport from "passport";
 
 export var router = express.Router();
 
-// router.use((req, res, next) => {
-//   console.log("Hello from middleware!");
-//   next();
-// });
+router.use((req, res, next) => {
+  console.log("Hello from middleware!");
+  next();
+});
 
+// RESET ROUTE
 router.route("/reset").get((req, res) => {
   sequelize
     .sync({ force: true, alter: true })
@@ -29,52 +29,52 @@ router.route("/reset").get((req, res) => {
     });
 });
 
-router.route("/addActivity").post((req, res) => {
-  const activitate = {
-    Nume: req.body.Nume,
-    CodAcces: req.body.CodAcces,
-    DataInceput: req.body.DataInceput,
-    DataSfarsit: req.body.DataSfarsit,
-    TipActivitate: req.body.TipActivitate,
+//ADD ACTIVITY ROUTE
+router.post("/addActivity", checkAdmin, async (req, res) => {
+  const user = await req.user;
+  const activity = {
+    Name: req.body.Name,
+    AccessCode: req.body.AccessCode,
+    StartDate: req.body.StartDate,
+    FinalDate: req.body.FinalDate,
+    ActivityType: req.body.ActivityType,
+    IdUser: user.IdUser,
   };
   let errors = [];
 
   if (
-    !activitate.Nume ||
-    !activitate.CodAcces ||
-    !activitate.DataInceput ||
-    !activitate.DataSfarsit ||
-    !activitate.TipActivitate
+    !activity.Name ||
+    !activity.AccessCode ||
+    !activity.StartDate ||
+    !activity.FinalDate ||
+    !activity.ActivityType
   ) {
     console.log("Empty fields!");
     errors.push("Empty fields!");
   }
-  if (activitate.Nume.length < 2) {
+  if (activity.Name.length < 2) {
     console.log("Name should have more than 2 characters!");
     errors.push("Name should have more than 2 characters!");
   }
 
-  if (activitate.CodAcces.length < 2) {
+  if (activity.AccessCode.length < 2) {
     console.log("Code Access should have more than 2 characters!");
     errors.push("Code Access should have more than 2 characters!");
   }
 
-  if (Date.parse(activitate.DataInceput) > Date.parse(activitate.DataSfarsit)) {
+  if (Date.parse(activity.StartDate) > Date.parse(activity.FinalDate)) {
     console.log("Wrong date!");
     errors.push("Wrong date!");
   }
 
-  if (
-    activitate.TipActivitate != "seminar" &&
-    activitate.TipActivitate != "curs"
-  ) {
+  if (activity.ActivityType != "seminar" && activity.ActivityType != "curs") {
     console.log("Wrong activity type!");
     errors.push("Wrong activity type!");
   }
 
   if (errors.length === 0) {
     try {
-      Activities.create(activitate).then((result) => res.json(result));
+      Activities.create(activity).then((result) => res.json(result));
       //  res.status(201).send({ message: "Activitate adaugata!" });
     } catch (error) {
       console.log(error);
@@ -85,29 +85,44 @@ router.route("/addActivity").post((req, res) => {
   }
 });
 
-router.route("/getActivities").get((req, res) => {
-  Activities.findAll().then((result) => res.json(result));
+// GET ALL ACTIVITIES ROUTE
+router.get("/getActivities", checkNotAuth, (req, res) => {
+  Activities.findAll()
+    .then((result) => res.json(result))
+    .catch((err) => res.status(500).send(err));
 });
 
-router.route("/getActivitiesByType/type").get((req, res) => {
+//GET ACTIVITIES BY TYPE (seminar/curs)
+//localhost:8080/api/getActivitiesByType/type?ActivityType=seminar
+router.get("/getActivitiesByType/type", checkNotAuth, (req, res) => {
   Activities.findAll({
     where: {
-      TipActivitate: req.query.TipActivitate,
+      ActivityType: req.query.ActivityType,
     },
-  }).then((result) => res.json(result));
+  })
+    .then((result) => res.json(result))
+    .catch((err) => res.status(500).send(err));
 });
 
-router.route("/addFeedback").post((req, res) => {
+//ADD FEEDBACK ROUTE
+router.post("/addFeedback", checkStudent, async (req, res) => {
+  const user = await req.user;
   const feedback = {
     Text: req.body.Text,
-    Nota: req.body.Nota,
-    DataFeedback: req.body.DataFeedback,
-    IdActivitate: req.body.IdActivitate,
+    Grade: req.body.Grade,
+    FeedbackDate: req.body.FeedbackDate,
+    IdActivity: req.body.IdActivity,
+    IdUser: user.IdUser,
   };
 
   let errors = [];
 
-  if (!feedback.Text || !feedback.Nota || !feedback.IdActivitate) {
+  if (
+    !feedback.Text ||
+    !feedback.Grade ||
+    !feedback.FeedbackDate ||
+    !feedback.IdActivity
+  ) {
     console.log("Missing fields!");
     errors.push("Missing fields!");
   }
@@ -120,7 +135,6 @@ router.route("/addFeedback").post((req, res) => {
   if (errors.length === 0) {
     try {
       Feedback.create(feedback).then((result) => res.json(result));
-      //  res.status(201).send({ message: "Feedback adaugat!" });
     } catch (error) {
       console.log(error);
       res.status(500).send({ message: "EROARE" });
@@ -130,21 +144,38 @@ router.route("/addFeedback").post((req, res) => {
   }
 });
 
-router.route("/getFeedback").get((req, res) => {
-  Feedback.findAll().then((result) => res.json(result));
+//GET ALL FEEDBACK
+router.get("/getFeedback", checkAdmin, (req, res) => {
+  Feedback.findAll()
+    .then((result) => res.json(result))
+    .catch((err) => res.status(500).send(err));
 });
 
-router.route("/getFeedbackByActivityId/:id").get((req, res) => {
+//GET FEEDBACK BY ActivityId
+router.get("/getFeedbackByActivityId/:id", checkAdmin, (req, res) => {
   Feedback.findAll({
     where: {
-      IdActivitate: req.params.id,
+      IdActivity: req.params.id,
     },
   })
     .then((result) => res.json(result))
-    .catch((err) => console.log("Error!"));
+    .catch((err) => res.status(500).send(err));
 });
 
-router.route("/deleteActivity/:id").delete((req, res) => {
+//GET FEEDBACK BY IdUser (student)
+router.get("/getFeedbackByStudentUserId", checkStudent, async(req, res) => {
+  const user = await req.user;
+  Feedback.findAll({
+    where: {
+      IdUser: user.IdUser,
+    },
+  })
+    .then((result) => res.json(result))
+    .catch((err) => res.status(500).send(err));
+});
+
+//DELETE ACTIVITY BY ID
+router.delete("/deleteActivity/:id", checkAdmin, (req, res) => {
   Activities.findByPk(req.params.id)
     .then((record) => {
       record.destroy();
@@ -154,24 +185,70 @@ router.route("/deleteActivity/:id").delete((req, res) => {
     );
 });
 
-router.route("/updateActivity/:id").put((req, res) => {
-  Activities.findByPk(req.params.id).then((record) => {
-    record
-      .update({
-        Nume: req.body.Nume,
-        CodAcces: req.body.CodAcces,
-        DataInceput: req.body.DataInceput,
-        DataSfarsit: req.body.DataSfarsit,
-        TipActivitate: req.body.TipActivitate,
-      })
-      .then((result) => res.json(result));
-  });
+//UPDATE ACTIVITY BY ID
+router.put("/updateActivity/:id", checkAdmin, (req, res) => {
+  const activity = {
+    Name: req.body.Name,
+    AccessCode: req.body.AccessCode,
+    StartDate: req.body.StartDate,
+    FinalDate: req.body.FinalDate,
+    ActivityType: req.body.ActivityType,
+  };
+  let errors = [];
+
+  if (
+    !activity.Name ||
+    !activity.AccessCode ||
+    !activity.StartDate ||
+    !activity.FinalDate ||
+    !activity.ActivityType
+  ) {
+    console.log("Empty fields!");
+    errors.push("Empty fields!");
+  }
+  if (activity.Name.length < 2) {
+    console.log("Name should have more than 2 characters!");
+    errors.push("Name should have more than 2 characters!");
+  }
+
+  if (activity.AccessCode.length < 2) {
+    console.log("Code Access should have more than 2 characters!");
+    errors.push("Code Access should have more than 2 characters!");
+  }
+
+  if (Date.parse(activity.StartDate) > Date.parse(activity.FinalDate)) {
+    console.log("Wrong date!");
+    errors.push("Wrong date!");
+  }
+
+  if (activity.ActivityType != "seminar" && activity.ActivityType != "curs") {
+    console.log("Wrong activity type!");
+    errors.push("Wrong activity type!");
+  }
+
+  if (errors.length === 0) {
+    Activities.findByPk(req.params.id).then((record) => {
+      record
+        .update({
+          Name: activity.Name,
+          AccessCode: activity.AccessCode,
+          StartDate: activity.StartDate,
+          FinalDate: activity.FinalDate,
+          ActivityType: activity.ActivityType,
+        })
+        .then((result) => res.json(result))
+        .catch((err) => res.status(500).send(err));
+    });
+  } else {
+    res.status(400).send(errors);
+  }
 });
 
-router.route("/checkAccessCode/:id").get((req, res) => {
+//CHECK ACCESS CODE
+router.get("/checkAccessCode/:id", checkStudent, (req, res) => {
   try {
     Activities.findByPk(req.params.id).then((result) => {
-      if (result.CodAcces === req.body.CodAcces) {
+      if (result.AccessCode === req.body.AccessCode) {
         res.status(200).send({ message: "The code is ok!" });
       } else {
         res.status(400).send({ message: "Incorrect code!" });
@@ -182,44 +259,48 @@ router.route("/checkAccessCode/:id").get((req, res) => {
   }
 });
 
-router.route("/addProfessor").post(async (req, res) => {
-  const professor = {
-    Nume: req.body.Nume,
+//ADD USER
+router.route("/addUser").post(async (req, res) => {
+  const user = {
+    Name: req.body.Name,
     Email: req.body.Email,
-    Parola: req.body.Parola,
+    Password: req.body.Password,
+    isProfessor: req.body.isProfessor,
   };
 
   let errors = [];
 
-  if (!professor.Nume || !professor.Email || !professor.Parola) {
+  if (!user.Name || !user.Email || !user.Password) {
     console.log("Empty fields!");
     errors.push("Empty fields!");
   }
-  if (professor.Nume.length < 2 || professor.Nume.length > 30) {
+  if (user.isProfessor !== 0 && user.isProfessor !== 1) {
+    console.log("This field accepts only 0 and 1 values!");
+    errors.push("This field accepts only 0 and 1 values!");
+  }
+  if (user.Name.length < 2 || user.Name.length > 30) {
     console.log("Name should have more than 2 characters and less than 30!");
     errors.push("Name should have more than 2 characters and less than 30!");
   }
   if (
-    !professor.Email.match(
+    !user.Email.match(
       /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
     )
   ) {
     console.log("Email incorrect!");
     errors.push("Email incorrect!");
   }
-  if (professor.Email.length < 6) {
+  if (user.Password.length < 6) {
     console.log("Password should have more than 6 characters!");
     errors.push("Password should have more than 6 characters!");
   }
 
   if (errors.length === 0) {
     try {
-      const hashedPassword = await bcrypt.hash(professor.Parola, 10);
-      professor.Parola = hashedPassword;
+      const hashedPassword = await bcrypt.hash(user.Password, 10);
+      user.Password = hashedPassword;
 
-      Professors.create(professor).then((result) =>
-        res.status(201).send(result)
-      );
+      Users.create(user).then((result) => res.status(201).send(result));
     } catch (err) {
       res.status(500).send(err);
     }
@@ -228,39 +309,52 @@ router.route("/addProfessor").post(async (req, res) => {
   }
 });
 
+//login check
 router.route("/success").get(async (req, res) => {
-  console.log("S-a apelat aici deci tre sa fie logat");
+  console.log("You logged in!");
   res.status(200).send(req.session);
 });
 
+//email & password doesn't match
 router.route("/fail").get(async (req, res) => {
   res
     .status(401)
     .send({ message: "Email & Password combination does not match." });
 });
 
-router.route("/notAllowed").get((req, res) => {
-  res.status(401).send({ message: "You are not an admin." });
-});
-
+//if you are not auth
 router.route("/notAuth").get(async (req, res) => {
   res
     .status(401)
     .send({ message: "You must authenticate to access this route." });
 });
 
+//not allowed as student
+router.get("/notAllowed", (req, res) => {
+  res.status(401).send({ message: "Access denied. You are not a professor." });
+});
+
+//not allowed as professor
+router.get("/notAllowedStudent", (req, res) => {
+  res.status(401).send({ message: "Access denied. You are not a student." });
+});
+
+//if you are already auth
 router.route("/alreadyAuth").get(async (req, res) => {
   res.status(401).send({ message: "You are already authenticated." });
 });
 
+//just an example for checkNotAuth
 router.get("/userData", checkNotAuth, async (req, res) => {
   res.status(200).send({ message: "Important stuff." });
 });
 
+//logout
 router.get("/logout", async (req, res) => {
   res.status(200).send({ message: "You logged out!" });
 });
 
+//check if user is auth
 function checkAuth(req, res, next) {
   if (req.isAuthenticated()) {
     return res.redirect("/api/alreadyAuth");
@@ -268,6 +362,7 @@ function checkAuth(req, res, next) {
   return next();
 }
 
+//check if user is not auth
 function checkNotAuth(req, res, next) {
   if (req.isAuthenticated()) {
     return next();
@@ -275,6 +370,23 @@ function checkNotAuth(req, res, next) {
   res.redirect("/api/notAuth");
 }
 
+//check if user is professor
+async function checkAdmin(req, res, next) {
+  const user = await req.user;
+  if (req.isAuthenticated() && user.isProfessor) {
+    return next();
+  } else res.redirect("/api/notAllowed");
+}
+
+//check if user is student
+async function checkStudent(req, res, next) {
+  const user = await req.user;
+  if (req.isAuthenticated() && !user.isProfessor) {
+    return next();
+  } else res.redirect("/api/notAllowedStudent");
+}
+
+//login
 router.route("/login").post(
   checkAuth,
   passport.authenticate("local", {
@@ -283,8 +395,8 @@ router.route("/login").post(
   })
 );
 
+//logout
 router.delete("/logout", async (req, res) => {
   req.logOut();
   res.redirect("/api/logout");
 });
-
