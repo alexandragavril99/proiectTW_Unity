@@ -29,6 +29,143 @@ router.route("/reset").get((req, res) => {
     });
 });
 
+//ADD USER
+router.route("/addUser").post(async (req, res) => {
+  const user = {
+    Name: req.body.Name,
+    Email: req.body.Email,
+    Password: req.body.Password,
+    isProfessor: req.body.isProfessor,
+  };
+
+  let errors = [];
+
+  if (!user.Name || !user.Email || !user.Password) {
+    console.log("Empty fields!");
+    errors.push("Empty fields!");
+  }
+  if (user.isProfessor !== 0 && user.isProfessor !== 1) {
+    console.log("This field accepts only 0 and 1 values!");
+    errors.push("This field accepts only 0 and 1 values!");
+  }
+  if (user.Name.length < 2 || user.Name.length > 30) {
+    console.log("Name should have more than 2 characters and less than 30!");
+    errors.push("Name should have more than 2 characters and less than 30!");
+  }
+  if (
+    !user.Email.match(
+      /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+    )
+  ) {
+    console.log("Email incorrect!");
+    errors.push("Email incorrect!");
+  }
+  if (user.Password.length < 6) {
+    console.log("Password should have more than 6 characters!");
+    errors.push("Password should have more than 6 characters!");
+  }
+
+  if (errors.length === 0) {
+    try {
+      const hashedPassword = await bcrypt.hash(user.Password, 10);
+      user.Password = hashedPassword;
+
+      Users.create(user).then((result) => res.status(201).send(result));
+    } catch (err) {
+      res.status(500).send(err);
+    }
+  } else {
+    res.status(400).send(errors);
+  }
+});
+
+//login check
+router.route("/success").get(async (req, res) => {
+  console.log("You logged in!");
+  res.status(200).send(req.session);
+});
+
+//email & password doesn't match
+router.route("/fail").get(async (req, res) => {
+  res
+    .status(401)
+    .send({ message: "Email & Password combination does not match." });
+});
+
+//if you are not auth
+router.route("/notAuth").get(async (req, res) => {
+  res
+    .status(401)
+    .send({ message: "You must authenticate to access this route." });
+});
+
+//not allowed as student
+router.get("/notAllowed", (req, res) => {
+  res.status(401).send({ message: "Access denied. You are not a professor." });
+});
+
+//not allowed as professor
+router.get("/notAllowedStudent", (req, res) => {
+  res.status(401).send({ message: "Access denied. You are not a student." });
+});
+
+//if you are already auth
+router.route("/alreadyAuth").get(async (req, res) => {
+  res.status(401).send({ message: "You are already authenticated." });
+});
+
+//logout
+router.get("/logout", async (req, res) => {
+  res.status(200).send({ message: "You logged out!" });
+});
+
+//check if user is auth
+function checkAuth(req, res, next) {
+  if (req.isAuthenticated()) {
+    return res.redirect("/api/alreadyAuth");
+  }
+  return next();
+}
+
+//check if user is not auth
+function checkNotAuth(req, res, next) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.redirect("/api/notAuth");
+}
+
+//check if user is professor
+async function checkAdmin(req, res, next) {
+  const user = await req.user;
+  if (req.isAuthenticated() && user.isProfessor) {
+    return next();
+  } else res.redirect("/api/notAllowed");
+}
+
+//check if user is student
+async function checkStudent(req, res, next) {
+  const user = await req.user;
+  if (req.isAuthenticated() && !user.isProfessor) {
+    return next();
+  } else res.redirect("/api/notAllowedStudent");
+}
+
+//login
+router.route("/login").post(
+  checkAuth,
+  passport.authenticate("local", {
+    successRedirect: "/api/success",
+    failureRedirect: "/api/fail",
+  })
+);
+
+//logout
+router.delete("/logout", async (req, res) => {
+  req.logOut();
+  res.redirect("/api/logout");
+});
+
 //ADD ACTIVITY ROUTE
 router.post("/addActivity", checkAdmin, async (req, res) => {
   const user = await req.user;
@@ -163,7 +300,7 @@ router.get("/getFeedbackByActivityId/:id", checkAdmin, (req, res) => {
 });
 
 //GET FEEDBACK BY IdUser (student)
-router.get("/getFeedbackByStudentUserId", checkStudent, async(req, res) => {
+router.get("/getFeedbackByStudentUserId", checkStudent, async (req, res) => {
   const user = await req.user;
   Feedback.findAll({
     where: {
@@ -171,6 +308,24 @@ router.get("/getFeedbackByStudentUserId", checkStudent, async(req, res) => {
     },
   })
     .then((result) => res.json(result))
+    .catch((err) => res.status(500).send(err));
+});
+
+//GET FEEDBACK BY IdUser (professor)
+router.get("/getFeedbackByProfessorUserId", checkAdmin, async (req, res) => {
+  const user = await req.user;
+  Activities.findAll({
+    include: [
+      {
+        model: Feedback,
+        attributes: ["Text", "Grade", "FeedbackDate"],
+      },
+    ],
+    where: {
+      IdUser: user.IdUser,
+    },
+  })
+    .then((result) => res.status(200).json(result))
     .catch((err) => res.status(500).send(err));
 });
 
@@ -259,144 +414,37 @@ router.get("/checkAccessCode/:id", checkStudent, (req, res) => {
   }
 });
 
-//ADD USER
-router.route("/addUser").post(async (req, res) => {
-  const user = {
-    Name: req.body.Name,
-    Email: req.body.Email,
-    Password: req.body.Password,
-    isProfessor: req.body.isProfessor,
+//UPDATE PASSWORD
+router.put("/updatePassword", checkNotAuth, async (req, res) => {
+  const updatePass = {
+    oldPassword: req.body.oldPassword,
+    newPassword: req.body.newPassword,
   };
-
   let errors = [];
+  const user = await req.user;
 
-  if (!user.Name || !user.Email || !user.Password) {
-    console.log("Empty fields!");
-    errors.push("Empty fields!");
+  if ((await bcrypt.compare(updatePass.oldPassword, user.Password)) == false) {
+    errors.push("The password does not match!");
   }
-  if (user.isProfessor !== 0 && user.isProfessor !== 1) {
-    console.log("This field accepts only 0 and 1 values!");
-    errors.push("This field accepts only 0 and 1 values!");
-  }
-  if (user.Name.length < 2 || user.Name.length > 30) {
-    console.log("Name should have more than 2 characters and less than 30!");
-    errors.push("Name should have more than 2 characters and less than 30!");
-  }
-  if (
-    !user.Email.match(
-      /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-    )
-  ) {
-    console.log("Email incorrect!");
-    errors.push("Email incorrect!");
-  }
-  if (user.Password.length < 6) {
-    console.log("Password should have more than 6 characters!");
-    errors.push("Password should have more than 6 characters!");
+  if (updatePass.newPassword == updatePass.oldPassword) {
+    errors.push("The new password can't be the same as the old password!");
   }
 
   if (errors.length === 0) {
     try {
-      const hashedPassword = await bcrypt.hash(user.Password, 10);
-      user.Password = hashedPassword;
-
-      Users.create(user).then((result) => res.status(201).send(result));
+      user
+        .update({
+          Password: await bcrypt.hash(updatePass.newPassword, 10),
+        })
+        .then(() => {
+          res.status(200).send({
+            message: "Password changed!",
+          });
+        });
     } catch (err) {
       res.status(500).send(err);
     }
   } else {
     res.status(400).send(errors);
   }
-});
-
-//login check
-router.route("/success").get(async (req, res) => {
-  console.log("You logged in!");
-  res.status(200).send(req.session);
-});
-
-//email & password doesn't match
-router.route("/fail").get(async (req, res) => {
-  res
-    .status(401)
-    .send({ message: "Email & Password combination does not match." });
-});
-
-//if you are not auth
-router.route("/notAuth").get(async (req, res) => {
-  res
-    .status(401)
-    .send({ message: "You must authenticate to access this route." });
-});
-
-//not allowed as student
-router.get("/notAllowed", (req, res) => {
-  res.status(401).send({ message: "Access denied. You are not a professor." });
-});
-
-//not allowed as professor
-router.get("/notAllowedStudent", (req, res) => {
-  res.status(401).send({ message: "Access denied. You are not a student." });
-});
-
-//if you are already auth
-router.route("/alreadyAuth").get(async (req, res) => {
-  res.status(401).send({ message: "You are already authenticated." });
-});
-
-//just an example for checkNotAuth
-router.get("/userData", checkNotAuth, async (req, res) => {
-  res.status(200).send({ message: "Important stuff." });
-});
-
-//logout
-router.get("/logout", async (req, res) => {
-  res.status(200).send({ message: "You logged out!" });
-});
-
-//check if user is auth
-function checkAuth(req, res, next) {
-  if (req.isAuthenticated()) {
-    return res.redirect("/api/alreadyAuth");
-  }
-  return next();
-}
-
-//check if user is not auth
-function checkNotAuth(req, res, next) {
-  if (req.isAuthenticated()) {
-    return next();
-  }
-  res.redirect("/api/notAuth");
-}
-
-//check if user is professor
-async function checkAdmin(req, res, next) {
-  const user = await req.user;
-  if (req.isAuthenticated() && user.isProfessor) {
-    return next();
-  } else res.redirect("/api/notAllowed");
-}
-
-//check if user is student
-async function checkStudent(req, res, next) {
-  const user = await req.user;
-  if (req.isAuthenticated() && !user.isProfessor) {
-    return next();
-  } else res.redirect("/api/notAllowedStudent");
-}
-
-//login
-router.route("/login").post(
-  checkAuth,
-  passport.authenticate("local", {
-    successRedirect: "/api/success",
-    failureRedirect: "/api/fail",
-  })
-);
-
-//logout
-router.delete("/logout", async (req, res) => {
-  req.logOut();
-  res.redirect("/api/logout");
 });
