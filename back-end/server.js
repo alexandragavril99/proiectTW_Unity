@@ -34,19 +34,19 @@ initPassport(
 
 app.use(
   session({
-    secret: "secret",
+    secret: "secret", //cheie pe care o vrem secreta care cripteaza toata informatia pt noi
     resave: false,
     saveUninitialized: false,
     name: "cookieLogin",
     cookie: {
       httpOnly: false,
-      maxAge: 3600000,
+      maxAge: 3600000, //durata sesiunii in milisecunde
     },
   })
 );
 
-app.use(passport.initialize());
-app.use(passport.session());
+app.use(passport.initialize()); //initializam passport in cadrul aplicatiei
+app.use(passport.session()); //vrem ca datele sa fie persistente de-a lungul intregii sesiuni a userului
 
 app.use("/api", router);
 
