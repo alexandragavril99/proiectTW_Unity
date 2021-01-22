@@ -223,7 +223,7 @@ router.post("/addActivity", checkAdmin, async (req, res) => {
 });
 
 // GET ALL ACTIVITIES ROUTE
-router.get("/getActivities", checkNotAuth, (req, res) => {
+router.get("/getActivities", (req, res) => {
   Activities.findAll()
     .then((result) => res.json(result))
     .catch((err) => res.status(500).send(err));
