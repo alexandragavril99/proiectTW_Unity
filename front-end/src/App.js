@@ -4,6 +4,7 @@ import Login from "./components/Login";
 import { BrowserRouter, Route, Switch } from "react-router-dom";
 import Home from "./components/Home";
 import Table from "./components/Table"
+import addActivity from "./components/AddActivity";
 
 class App extends Component {
   render() {
@@ -14,6 +15,7 @@ class App extends Component {
             <Route exact path="/" component={Login} />
             <Route path="/login" component={Login} />
             <Route path="/home" component={Home} />
+            <Route path="/addActivity" component={addActivity} />
             <Route path="/table" component={Table}/>
           </Switch>
         </BrowserRouter>
