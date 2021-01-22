@@ -38,7 +38,6 @@ class addActivity extends Component {
                                 className='form-input'
                                 type='date'
                                 name='startDate'
-                                placeholder="start date"
                             />
                         </div>
 
@@ -61,7 +60,7 @@ class addActivity extends Component {
                         </FormControl>
                         </div>
                         <button type="submit" className="btn btn-primary btn-block">
-                            Submit
+                            Add Activity
               </button>
                     </div>
                 </div>

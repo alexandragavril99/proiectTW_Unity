@@ -212,7 +212,7 @@ router.post("/addActivity", checkAdmin, async (req, res) => {
   if (errors.length === 0) {
     try {
       Activities.create(activity).then((result) => res.json(result));
-      //  res.status(201).send({ message: "Activitate adaugata!" });
+
     } catch (error) {
       console.log(error);
       res.status(500).send({ message: "EROARE" });

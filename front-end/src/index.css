@@ -68,3 +68,16 @@ code {
 .h-auth {
   color: #ffffff;
 }
+
+.grid {
+  display: block;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-gap: 12px;
+}
+
+.item {
+  min-height: 100px;
+  background-color: #eee;
+  grid-column-start: 2;
+  grid-column-end: 2;
+}
