@@ -23,7 +23,7 @@ class Login extends Component {
                 name="email"
                 onChange={this.handleChange}
                 className="form-control"
-                placeholder="Enter email..."
+                placeholder="Enter email"
               />
               <label className="input-h">Password</label>
               <input
@@ -31,7 +31,7 @@ class Login extends Component {
                 name="password"
                 onChange={this.handleChange}
                 className="form-control"
-                placeholder="Enter password..."
+                placeholder="Enter password"
               />
               </div>
             <button type="submit" className="btn-login">
