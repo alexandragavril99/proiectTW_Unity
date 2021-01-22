@@ -8,11 +8,6 @@ import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
 import Paper from "@material-ui/core/Paper";
 
-const useStyles = makeStyles({
-  table: {
-    maxWidth: 600,
-  },
-});
 
 function createData(name, calories, fat, carbs, protein) {
   return { name, calories, fat, carbs, protein };
@@ -27,17 +22,16 @@ const rows = [
 ];
 
 export default function DenseTable() {
-  const classes = useStyles();
 
   return (
-    <TableContainer component={Paper}>
-      <Table className={classes.table} size="small" aria-label="a dense table">
-        <TableHead>
-          <TableRow>
+    <TableContainer component={Paper} className="table">
+      <Table>
+        <TableHead className="table-head">
+          <TableRow >
             <TableCell>Nume activitate</TableCell>
-            <TableCell align="left">Nume profesor</TableCell>
-            <TableCell align="left">Data de inceput</TableCell>
-            <TableCell align="left">Data de sfarsit</TableCell>
+            <TableCell>Nume profesor</TableCell>
+            <TableCell>Data de inceput</TableCell>
+            <TableCell>Data de sfarsit</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -46,9 +40,9 @@ export default function DenseTable() {
               <TableCell component="th" scope="row">
                 {row.name}
               </TableCell>
-              <TableCell align="left">{row.calories}</TableCell>
-              <TableCell align="left">{row.fat}</TableCell>
-              <TableCell align="left">{row.carbs}</TableCell>
+              <TableCell>{row.calories}</TableCell>
+              <TableCell>{row.fat}</TableCell>
+              <TableCell>{row.carbs}</TableCell>
             </TableRow>
           ))}
         </TableBody>
