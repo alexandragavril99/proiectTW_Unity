@@ -127,6 +127,13 @@ function checkAuth(req, res, next) {
   return next();
 }
 
+// function checkSession(req,res,next) {
+//   if(req.user) {
+//     return res.json({user: req.user})
+//   }
+//   else
+// }
+
 //check if user is not auth
 function checkNotAuth(req, res, next) {
   if (req.isAuthenticated()) {
@@ -224,7 +231,7 @@ router.post("/addActivity", checkAdmin, async (req, res) => {
 
 // GET ALL ACTIVITIES ROUTE
 router.get("/getActivities", (req, res) => {
-  Activities.findAll()
+  Users.findAll({ attributes: ["Name"], include: [Activities] })
     .then((result) => res.json(result))
     .catch((err) => res.status(500).send(err));
 });

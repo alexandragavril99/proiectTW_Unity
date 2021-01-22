@@ -39,7 +39,7 @@ class Login extends Component {
           logged = true;
           // const history = useHistory();
           // history.push("/home");
-          window.location.href = "http://localhost:3000/home";
+          // window.location.href = "http://localhost:3000/home";
         })
         .catch((err) => {
           console.log(err);
