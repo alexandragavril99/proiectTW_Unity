@@ -18,7 +18,6 @@ class Login extends Component {
 
   handleChange = (event) => {
     this.setState({ [event.target.name]: event.target.value });
-    console.log(this.state.Email);
   };
 
   handleSubmit = (event) => {
@@ -29,18 +28,16 @@ class Login extends Component {
       toast.error("Combination is not valid!");
       valid = false;
     }
-    console.log(this.state);
+
     if (valid) {
       axios
-        .post("http://localhost:8080/api/login", this.state)
-        .then((res) => {
-          console.log(res);
-          console.log(this.state);
-          logged = true;
-          // const history = useHistory();
-          // history.push("/home");
-          // window.location.href = "http://localhost:3000/home";
-        })
+      .post("http://localhost:8080/api/login", this.state)
+      .then((res) => {
+        console.log(res);
+        console.log(this.state);
+        logged = true;
+        this.props.history.push('/home');
+      })
         .catch((err) => {
           console.log(err);
           toast.error("Combination is not valid!");

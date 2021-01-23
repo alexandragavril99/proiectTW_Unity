@@ -7,6 +7,7 @@ import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
 import Paper from "@material-ui/core/Paper";
 import axios from "axios";
+import { Link } from 'react-router-dom';
 
 class Home extends Component {
   state = {
@@ -16,15 +17,6 @@ class Home extends Component {
     super(props);
     console.log("Home Constructor");
   }
-
-  handleClick(e) {
-    console.log(e);
-  }
-
-  // accessClick(e) {
-  //   //console.log(e);
-  //   alert("Row index is: " + e.rowIndex);
-  // }
 
   async componentDidMount() {
     let res = await axios.get("http://localhost:8080/api/getActivities", {
@@ -79,7 +71,14 @@ class Home extends Component {
                 <TableCell>{row.startDate}</TableCell>
                 <TableCell>{row.endDate}</TableCell>
                 <TableCell>
-                  <button onClick={this.accessClick}>Introdu cod acces</button>
+                  <Link to={{
+                    pathname: '/checkaccesscode', 
+                    state: { 
+                      activityID: row.Id
+                    }
+                  }}>
+                    <button>Introdu cod acces</button>
+                  </Link>
                 </TableCell>
               </TableRow>
             ))}

@@ -120,11 +120,31 @@ router.get("/logout", async (req, res) => {
 });
 
 //check if user is auth
-function checkAuth(req, res, next) {
-  if (req.isAuthenticated()) {
-    return res.redirect("/api/alreadyAuth");
+async function checkAuth(req, res, next) {
+  const user = await req.user;
+  if(user){
+    return next();
+  } else {
+    return res.status(401).json({
+      error: 'User not authenticated'
+    })
   }
-  return next();
+}
+
+//check if user is professor
+async function checkAdmin(req, res, next) {
+  const user = await req.user;
+  if (user && user.isProfessor) {
+    return next();
+  } else res.redirect("/api/notAllowed");
+}
+
+//check if user is student
+async function checkStudent(req, res, next) {
+  const user = await req.user;
+  if (user && !user.isProfessor) {
+    return next();
+  } else res.redirect("/api/notAllowedStudent");
 }
 
 // function checkSession(req,res,next) {
@@ -136,31 +156,14 @@ function checkAuth(req, res, next) {
 
 //check if user is not auth
 function checkNotAuth(req, res, next) {
-  if (req.isAuthenticated()) {
+  if (req.user) {
     return next();
   }
   res.redirect("/api/notAuth");
 }
 
-//check if user is professor
-async function checkAdmin(req, res, next) {
-  const user = await req.user;
-  if (req.isAuthenticated() && user.isProfessor) {
-    return next();
-  } else res.redirect("/api/notAllowed");
-}
-
-//check if user is student
-async function checkStudent(req, res, next) {
-  const user = await req.user;
-  if (req.isAuthenticated() && !user.isProfessor) {
-    return next();
-  } else res.redirect("/api/notAllowedStudent");
-}
-
 //login
 router.route("/login").post(
-  checkAuth,
   passport.authenticate("local", {
     successRedirect: "/api/success",
     failureRedirect: "/api/fail",
@@ -407,7 +410,7 @@ router.put("/updateActivity/:id", checkAdmin, (req, res) => {
 });
 
 //CHECK ACCESS CODE
-router.get("/checkAccessCode/:id", checkStudent, (req, res) => {
+router.post("/checkAccessCode/:id", checkStudent, (req, res) => {
   try {
     Activities.findByPk(req.params.id).then((result) => {
       if (result.AccessCode === req.body.AccessCode) {
