@@ -1,11 +1,74 @@
 import React, { Component } from "react";
 import { Button, RadioGroup, FormControl, FormLabel, FormControlLabel, Radio } from "@material-ui/core";
+import axios from 'axios';
 
 
 class addActivity extends Component {
+    constructor(props) {
+        super(props);
+        this.handleChange = this.handleChange.bind(this);
+        this.handleSubmit = this.handleSubmit.bind(this);
+    } 
+
+    state = {
+        activityName: '',
+        accessCode: '',
+        startDate: '',
+        endDate: '',
+        activityType: 'Seminar',
+        error: '',
+    }
+
+    handleChange = (event) => {
+        this.setState({ [event.target.name]: event.target.value });
+    };
+
+    // "Name": "Multimedia curs",
+    // "AccessCode": "MM2020c",
+    // "StartDate": "2020-10-01",
+    // "FinalDate": "2021-02-28",
+    // "ActivityType": "curs"
+
+    handleSubmit(e) {
+        e.preventDefault();
+        const {activityName, accessCode, startDate,  endDate, activityType} = this.state;
+        if(!activityName || !accessCode || !startDate || !endDate) {
+            return this.setState({...this.state, error: 'You must complete all the fields to submit.'});
+        } else {
+            this.setState({...this.state, error: ''})
+            
+            const postURL = `http://localhost:8080/api/addActivity/`;
+            axios.post(postURL, {
+                Name: activityName,
+                AccessCode: accessCode,
+                StartDate: startDate,
+                EndDate: endDate,
+                ActivityType: activityType
+            })
+            .then((response) => {
+                this.props.history.push({
+                    pathname: '/home', 
+                    state: { 
+                        activityAdded: true,
+                    }
+                });
+            })
+            .catch((error) => {
+                console.log('Error');
+                console.log(error);
+                switch (error.response.status) {
+                    case 400:
+                        return this.setState({...this.state, error: 'Bad request.'})
+                    default:
+                        return this.setState({...this.state, error: ''})
+                }
+            });
+        }   
+    }
+
     render() {
         return (
-            <form>
+            <form onSubmit={this.handleSubmit}>
                 <div className="page-inner">
                     <h3 className="h-auth">Add new activity</h3>
                         <div>
@@ -13,18 +76,20 @@ class addActivity extends Component {
                             <input
                                 type="text"
                                 name="activityName"
-                                onChange={this.handleChange}
                                 className="form-control"
                                 placeholder="Enter new activity name"
+                                value={this.state.activityName}
+                                onChange={this.handleChange}
                             />
 
                             <label className="input-h">Access Code</label>
                             <input
                                 type="text"
                                 name="accessCode"
-                                onChange={this.handleChange}
                                 className="form-control"
                                 placeholder="Enter an acces code"
+                                value={this.state.accessCode}
+                                onChange={this.handleChange}
                             />
                         </div>
                    
@@ -34,6 +99,8 @@ class addActivity extends Component {
                             className='form-control'
                             type='date'
                             name='startDate'
+                            value={this.state.startDate}
+                            onChange={this.handleChange}
                         />
 
                     <label className="input-h">End Date</label>
@@ -41,16 +108,21 @@ class addActivity extends Component {
                             className='form-control'
                             type='date'
                             name='endDate'
+                            value={this.state.endDate}
+                            onChange={this.handleChange}
                     />
                     </div>   
 
                     <FormControl component="fieldset" className="form-check">
                         <label className="input-h">Activity Type</label>
                         <RadioGroup aria-label="activityType" name="activityType" value={this.value} onChange={this.handleChange}>
-                            <FormControlLabel value="Seminar" control={<Radio />} label="Seminar" />
-                            <FormControlLabel value="Curs" control={<Radio />} label="Curs" />
+                            <FormControlLabel value="Seminar" control={<Radio checked={this.state.activityType === 'Seminar'} onChange={() => this.setState({...this.state, activityType: 'Seminar'})} />} label="Seminar" />
+                            <FormControlLabel value="Curs" control={<Radio checked={this.state.activityType === 'Curs'} onChange={() => this.setState({...this.state, activityType: 'Curs'})} />} label="Curs" />
                         </RadioGroup>
-                        </FormControl>
+                    </FormControl>
+
+                    {this.state.error && <p style={{color: 'red'}}>{this.state.error}</p>}
+
                     <button type="submit" className="btn-login">
                         Add Activity
                     </button>
