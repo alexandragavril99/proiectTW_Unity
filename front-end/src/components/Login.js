@@ -35,7 +35,7 @@ class Login extends Component {
       .then((res) => {
         console.log(res);
         console.log(this.state);
-        logged = true;
+        this.props.setUser(res.data.user);
         this.props.history.push('/home');
       })
         .catch((err) => {

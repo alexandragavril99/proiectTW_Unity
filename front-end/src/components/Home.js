@@ -15,7 +15,8 @@ class Home extends Component {
   };
   constructor(props) {
     super(props);
-    console.log("Home Constructor");
+    this.handleDeleteActivity = this.handleDeleteActivity.bind(this);
+
   }
 
   async componentDidMount() {
@@ -48,8 +49,18 @@ class Home extends Component {
     }
   }
 
+  async handleDeleteActivity(id) {
+    await axios.delete(`http://localhost:8080/api/deleteActivity/${id}`, {
+      withCredentials: true,
+    })
+  }
+
   render() {
     return (
+      <>
+      {this.props.user.isProfessor && (
+        <div>Hello Professor</div>
+      )}
       <TableContainer component={Paper} className="table">
         <Table>
           <TableHead className="table-head">
@@ -59,6 +70,9 @@ class Home extends Component {
               <TableCell>Data de inceput</TableCell>
               <TableCell>Data de sfarsit</TableCell>
               <TableCell></TableCell>
+              {this.props.user.isProfessor && (
+                <TableCell></TableCell>
+              )}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -77,14 +91,20 @@ class Home extends Component {
                       activityID: row.Id
                     }
                   }}>
-                    <button>Introdu cod acces</button>
+                    <button>Acceseaza Activitatea</button>
                   </Link>
                 </TableCell>
+                {this.props.user.isProfessor && (
+                  <TableCell>
+                      <button onClick={() => this.handleDeleteActivity(row.Id)}>Sterge Activitatea</button>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
+      </>
     );
   }
 }

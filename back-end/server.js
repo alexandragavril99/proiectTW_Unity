@@ -12,8 +12,6 @@ var app = express();
 
 //app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(passport.initialize()); //initializam passport in cadrul aplicatiei
-app.use(passport.session()); //vrem ca datele sa fie persistente de-a lungul intregii sesiuni a userului
 app.use(cookieParser())
 //app.use(cors());
 
@@ -73,6 +71,9 @@ app.use(
     },
   })
 );
+
+app.use(passport.initialize()); //initializam passport in cadrul aplicatiei
+app.use(passport.session()); //vrem ca datele sa fie persistente de-a lungul intregii sesiuni a userului
 
 app.use("/api", router);
 
