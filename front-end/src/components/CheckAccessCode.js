@@ -15,21 +15,27 @@ class checkAccessCode extends Component {
 
     handleSubmit(e) {
         e.preventDefault();
-        console.log('Submitted');
+        console.log('Submitted');;
         const postURL = `http://localhost:8080/api/checkAccessCode/${this.state.activityID}`;
         axios.post(postURL, {
-            accessCode: this.state.accessCode
+            AccessCode: this.state.accessCode
         })
         .then((response) => {
-            console.log('Success');
-            console.log(response.status);
+            this.props.history.push({
+                pathname: '/feedback', 
+                state: { 
+                    activityID: this.state.activityID
+                }
+            });
         })
         .catch((error) => {
             console.log('Error');
             console.log(error);
             switch (error.response.status) {
                 case 401:
-                    return this.setState({...this.state, error: 'You are not a student.'})
+                    return this.setState({...this.state, error: 'You are not logged in as a student.'})
+                case 400:
+                    return this.setState({...this.state, error: 'Incorrect code.'})
                 default:
                     return this.setState({...this.state, error: ''})
             }

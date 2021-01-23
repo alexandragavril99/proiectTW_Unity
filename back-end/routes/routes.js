@@ -121,7 +121,7 @@ router.get("/logout", async (req, res) => {
 
 //check if user is auth
 async function checkAuth(req, res, next) {
-  const user = await req.user;
+  const user = await req.session;
   if(user){
     return next();
   } else {
@@ -133,7 +133,7 @@ async function checkAuth(req, res, next) {
 
 //check if user is professor
 async function checkAdmin(req, res, next) {
-  const user = await req.user;
+  const user = await req.session;
   if (user && user.isProfessor) {
     return next();
   } else res.redirect("/api/notAllowed");
@@ -141,22 +141,22 @@ async function checkAdmin(req, res, next) {
 
 //check if user is student
 async function checkStudent(req, res, next) {
-  const user = await req.user;
+  const user = await req.session;
   if (user && !user.isProfessor) {
     return next();
   } else res.redirect("/api/notAllowedStudent");
 }
 
 // function checkSession(req,res,next) {
-//   if(req.user) {
-//     return res.json({user: req.user})
+//   if(req.session) {
+//     return res.json({user: req.session})
 //   }
 //   else
 // }
 
 //check if user is not auth
 function checkNotAuth(req, res, next) {
-  if (req.user) {
+  if (req.session) {
     return next();
   }
   res.redirect("/api/notAuth");
@@ -178,7 +178,7 @@ router.delete("/logout", async (req, res) => {
 
 //ADD ACTIVITY ROUTE
 router.post("/addActivity", checkAdmin, async (req, res) => {
-  const user = await req.user;
+  const user = await req.session;
   const activity = {
     Name: req.body.Name,
     AccessCode: req.body.AccessCode,
@@ -253,7 +253,7 @@ router.get("/getActivitiesByType/type", checkNotAuth, (req, res) => {
 
 //ADD FEEDBACK ROUTE
 router.post("/addFeedback", checkStudent, async (req, res) => {
-  const user = await req.user;
+  const user = await req.session;
   const feedback = {
     Text: req.body.Text,
     Grade: req.body.Grade,
@@ -311,7 +311,7 @@ router.get("/getFeedbackByActivityId/:id", checkAdmin, (req, res) => {
 
 //GET FEEDBACK BY IdUser (student)
 router.get("/getFeedbackByStudentUserId", checkStudent, async (req, res) => {
-  const user = await req.user;
+  const user = await req.session;
   Feedback.findAll({
     where: {
       IdUser: user.IdUser,
@@ -323,7 +323,7 @@ router.get("/getFeedbackByStudentUserId", checkStudent, async (req, res) => {
 
 //GET FEEDBACK BY IdUser (professor)
 router.get("/getFeedbackByProfessorUserId", checkAdmin, async (req, res) => {
-  const user = await req.user;
+  const user = await req.session;
   Activities.findAll({
     include: [
       {
@@ -431,7 +431,7 @@ router.put("/updatePassword", checkNotAuth, async (req, res) => {
     newPassword: req.body.newPassword,
   };
   let errors = [];
-  const user = await req.user;
+  const user = await req.session;
 
   if ((await bcrypt.compare(updatePass.oldPassword, user.Password)) == false) {
     errors.push("The password does not match!");

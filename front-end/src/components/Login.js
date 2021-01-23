@@ -31,7 +31,7 @@ class Login extends Component {
 
     if (valid) {
       axios
-      .post("http://localhost:8080/api/login", this.state)
+      .post("http://localhost:8080/api/login", this.state, {withCredentials: true})
       .then((res) => {
         console.log(res);
         console.log(this.state);
