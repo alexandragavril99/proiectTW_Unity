@@ -182,15 +182,15 @@ router.delete("/logout", async (req, res) => {
 });
 
 //ADD ACTIVITY ROUTE
-router.post("/addActivity", checkAdmin, async (req, res) => {
-  const user = await req.user;
+router.post("/addActivity", async (req, res) => {
+  const user = await req.session;
   const activity = {
     Name: req.body.Name,
     AccessCode: req.body.AccessCode,
     StartDate: req.body.StartDate,
     FinalDate: req.body.FinalDate,
     ActivityType: req.body.ActivityType,
-    IdUser: user.IdUser,
+    IdUser: 1,
   };
   let errors = [];
 
