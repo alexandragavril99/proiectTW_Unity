@@ -82,7 +82,7 @@ router.route("/addUser").post(async (req, res) => {
 //login check
 router.route("/success").get(async (req, res) => {
   const user = await req.user;
-  res.status(200).send({message: 'You are now logged in.', user});
+  res.status(200).send({ message: "You are now logged in.", user });
 });
 
 //email & password doesn't match
@@ -122,24 +122,24 @@ router.get("/logout", async (req, res) => {
 //check if user is auth Middleware
 async function checkAuth(req, res, next) {
   const user = await req.user;
-  if(user){
+  if (user) {
     return next();
   } else {
     return res.status(401).json({
-      error: 'User not authenticated'
-    })
+      error: "User not authenticated",
+    });
   }
 }
 // check if user is auth Route
 router.get("/checkSession", async (req, res) => {
   const user = await req.user;
-    if(user) {
-      return res.json({user})
-    } else {
-      return res.status(401).json({
-        error: 'User not authenticated'
-      }) 
-    }
+  if (user) {
+    return res.json({ user });
+  } else {
+    return res.status(401).json({
+      error: "User not authenticated",
+    });
+  }
 });
 
 //check if user is professor
